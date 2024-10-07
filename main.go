@@ -4,7 +4,13 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"stori_challenge/models"
+	"strconv"
 	"strings"
+)
+
+const (
+	YEAR = 2024
 )
 
 func main() {
@@ -48,13 +54,76 @@ func processCSVFile(filePath string) error {
 		return fmt.Errorf("error al leer las filas: %v", err)
 	}
 
+	var csvRow models.CSVDocument
 	for idx, row := range rows {
 		// Verificar que el archivo, tenga exactamente 3 columnas
 		if len(row) != 3 {
 			return fmt.Errorf("la fila %d no tiene exactamente 3 columnas: %v", idx+2, row) // +2 porque la primera fila es la cabecera
 		}
-		fmt.Printf("%v, %v, %v\n", row[0], row[1], row[2])
+		csvRow.Id = row[0]
+		csvRow.Date = row[1]
+		csvRow.Transaction = row[2]
+
+		sqlDoc, err := dataCSVToSQL(csvRow)
+		if err != nil {
+			// Si ocurre un error, se imprime y se termina la ejecución
+			fmt.Println("Error converting CSV to SQL:", err)
+		}
+		fmt.Println(sqlDoc)
+
 	}
 
 	return nil
+}
+
+// Convertir un registro CSV a un registro SQL
+func dataCSVToSQL(csvRow models.CSVDocument) (models.SQLDocument, error) {
+	// Validación y procesamiento del campo Date
+	dateParts := strings.Split(csvRow.Date, "/")
+	if len(dateParts) != 2 {
+		return models.SQLDocument{}, fmt.Errorf("invalid date format for row: %v", csvRow)
+	}
+
+	month, day := dateParts[0], dateParts[1]
+
+	// Conversión de string a uint para el campo Id
+	IdValue, err := stringToUint(csvRow.Id)
+	if err != nil {
+		return models.SQLDocument{}, fmt.Errorf("error converting Id: %v", err)
+	}
+
+	// Conversión de string a float64 para el campo Transaction
+	TransactionFloat64, err := stringToFloat64(csvRow.Transaction)
+	if err != nil {
+		return models.SQLDocument{}, fmt.Errorf("error converting Transaction: %v", err)
+	}
+
+	// Creación del documento SQL con los datos procesados
+	sqlDoc := models.SQLDocument{
+		IdTransaction: IdValue,
+		Date:          fmt.Sprintf("%v-%v-%v", YEAR, month, day), // Fecha en formato YYYY-MM-DD
+		Transaction:   TransactionFloat64,
+	}
+
+	return sqlDoc, nil
+}
+
+// Convertir el Id string a uint
+// Recibe un string, lo convierte a un número sin signo (uint) y maneja errores
+func stringToUint(s string) (uint, error) {
+	num, err := strconv.ParseUint(s, 10, 0)
+	if err != nil {
+		return 0, fmt.Errorf("error converting string to uint: %v", err)
+	}
+	return uint(num), nil
+}
+
+// Convertir Transaction string a float64
+// Recibe un string, lo convierte a float64 y maneja errores
+func stringToFloat64(s string) (float64, error) {
+	floatValue, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, fmt.Errorf("error converting string to float64: %v", err)
+	}
+	return floatValue, nil
 }
