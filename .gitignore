@@ -1,0 +1,38 @@
+# Go-related files
+/bin/
+/pkg/
+/vendor/
+
+# Compiled object files
+*.o
+*.a
+*.so
+
+# Go test binaries
+*.test
+
+# Go build output
+*.exe
+*.dll
+*.dylib
+*.test
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Dependency directories (for Go modules)
+vendor/
+
+# IDE/Editor specific files
+.vscode/
+.idea/
+*.swp
+
+# Files for ignoring common backup files
+*.bak
+*.old
+
+# PDF and TXT files
+*.pdf
+*.txt
