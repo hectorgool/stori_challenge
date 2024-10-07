@@ -47,7 +47,7 @@ func GetDB() *gorm.DB {
 		sqlDB.SetMaxOpenConns(100)              // Conexiones máximas abiertas
 		sqlDB.SetConnMaxLifetime(time.Hour * 1) // Duración máxima de las conexiones
 
-		//fmt.Println("Conexión a la base de datos establecida")
+		fmt.Println("Conexión a la base de datos establecida")
 	})
 
 	return db
