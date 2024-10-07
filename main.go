@@ -7,13 +7,11 @@ import (
 )
 
 func main() {
-	//.Println("Stori Challenge")
+
 	filePath := "txns.csv"
 	err := processCSVFile(filePath)
 	if err != nil {
 		fmt.Println("Error:", err)
-	} else {
-		fmt.Println("El archivo CSV es válido.")
 	}
 }
 
@@ -35,7 +33,11 @@ func processCSVFile(filePath string) error {
 		return fmt.Errorf("error al leer las filas: %v", err)
 	}
 
-	for _, row := range rows {
+	for idx, row := range rows {
+		// Verificar que el archivo, tenga exactamente 3 columnas
+		if len(row) != 3 {
+			return fmt.Errorf("la fila %d no tiene exactamente 3 columnas: %v", idx+2, row) // +2 porque la primera fila es la cabecera
+		}
 		fmt.Printf("%v, %v, %v\n", row[0], row[1], row[2])
 	}
 
