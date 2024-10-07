@@ -7,10 +7,7 @@ import (
 	"stori_challenge/models"
 	"strconv"
 	"strings"
-)
-
-const (
-	YEAR = 2024
+	"time"
 )
 
 func main() {
@@ -98,10 +95,11 @@ func dataCSVToSQL(csvRow models.CSVDocument) (models.SQLDocument, error) {
 		return models.SQLDocument{}, fmt.Errorf("error converting Transaction: %v", err)
 	}
 
+	year := getCurrentYear()
 	// Creación del documento SQL con los datos procesados
 	sqlDoc := models.SQLDocument{
 		IdTransaction: IdValue,
-		Date:          fmt.Sprintf("%v-%v-%v", YEAR, month, day), // Fecha en formato YYYY-MM-DD
+		Date:          fmt.Sprintf("%v-%v-%v", year, month, day), // Fecha en formato YYYY-MM-DD
 		Transaction:   TransactionFloat64,
 	}
 
@@ -126,4 +124,8 @@ func stringToFloat64(s string) (float64, error) {
 		return 0, fmt.Errorf("error converting string to float64: %v", err)
 	}
 	return floatValue, nil
+}
+
+func getCurrentYear() int {
+	return time.Now().Year()
 }
