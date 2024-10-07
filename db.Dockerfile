@@ -1,2 +1,2 @@
 # start with base image
-FROM mysql:oracle
+FROM mysql:8.0.27
