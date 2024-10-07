@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -26,6 +27,20 @@ func processCSVFile(filePath string) error {
 	// Leer el archivo CSV
 	reader := csv.NewReader(file)
 	reader.TrimLeadingSpace = true
+
+	// Leer la cabecera
+	headers, err := reader.Read()
+	if err != nil {
+		return fmt.Errorf("error al leer la cabecera: %v", err)
+	}
+
+	// Verificar si la cabecera es correcta
+	expectedHeaders := []string{"Id", "Date", "Transaction"}
+	for i, header := range expectedHeaders {
+		if strings.TrimSpace(headers[i]) != header {
+			return fmt.Errorf("cabecera inválida: se esperaba %s, pero se encontró %s", header, headers[i])
+		}
+	}
 
 	// Leer todas las filas
 	rows, err := reader.ReadAll()
