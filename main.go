@@ -24,38 +24,47 @@ func main() {
 		log.Fatalf("Error processing CSV file (%s): %v", filePath, err)
 	}
 
-	if err := createSummary(); err != nil {
+	emailData, err := createSummary() // Ahora recibe emailData y error
+	if err != nil {
 		log.Fatalf("Failed to create summary: %v", err)
 	}
+	log.Printf("Email data generated: %+v \n", emailData) // Loguear emailData
 
-	fmt.Println("CSV file processed and summary created successfully.")
+	/*
+		if err := SendEmail(emailData); err != nil {
+			// Manejo de errores
+			log.Fatalf("Error al enviar el correo: %v\n", err)
+		}
+	*/
+
+	log.Println("CSV file processed and summary created successfully.")
+
 }
 
 // createSummary genera un resumen de los datos financieros y maneja errores de manera más robusta.
-func createSummary() error {
-	fmt.Println("Summary:")
+func createSummary() (models.EmailData, error) {
 
 	total, err := totalBalance()
 	if err != nil {
-		return fmt.Errorf("error calculating total balance: %w", err) // Propaga el error
+		return models.EmailData{}, fmt.Errorf("error calculating total balance: %w", err) // Propaga el error
 	}
 	log.Printf("The total balance is: %.2f", total)
 
 	avgDebit, err := averageDebitAmount()
 	if err != nil {
-		return fmt.Errorf("error calculating average debit amount: %w", err)
+		return models.EmailData{}, fmt.Errorf("error calculating average debit amount: %w", err)
 	}
 	log.Printf("The average debit amount is: %.2f", avgDebit)
 
 	avgCredit, err := averageCreditAmount()
 	if err != nil {
-		return fmt.Errorf("error calculating average credit amount: %w", err)
+		return models.EmailData{}, fmt.Errorf("error calculating average credit amount: %w", err)
 	}
 	log.Printf("The average credit amount is: %.2f", avgCredit)
 
 	transactions, err := numberTransactionsInMonth()
 	if err != nil {
-		return fmt.Errorf("error retrieving transactions by month: %w", err)
+		return models.EmailData{}, fmt.Errorf("error retrieving transactions by month: %w", err)
 	}
 
 	var emailData models.EmailData
@@ -65,9 +74,7 @@ func createSummary() error {
 	emailData.AverageCreditAmount = avgCredit
 	emailData.Transactions = transactions
 
-	log.Printf("Email data: %+v \n", emailData)
-
-	return nil
+	return emailData, nil // Regresa emailData y nil en caso de éxito
 }
 
 func totalBalance() (float64, error) {
@@ -300,7 +307,7 @@ func SendEmail(data models.EmailData) error {
 	auth := smtp.PlainAuth("", senderEmail, senderPassword, smtpServer)
 
 	// Plantilla HTML externa
-	templateFile := "template.html"
+	templateFile := "email_template.html"
 
 	// Parseamos la plantilla HTML
 	t, err := template.ParseFiles(templateFile)
