@@ -21,52 +21,38 @@ func main() {
 	if err != nil {
 		fmt.Println("Error:", err)
 	} else {
-		createSummary()
+		if err := createSummary(); err != nil {
+			log.Fatalf("Failed to create summary: %v", err)
+		}
 	}
 }
 
-func createSummary() {
+// createSummary genera un resumen de los datos financieros y maneja errores de manera más robusta.
+func createSummary() error {
 	fmt.Println("Summary:")
 
 	total, err := totalBalance()
 	if err != nil {
-		log.Printf("Error calculating total balance: %v", err)
-		// Manejo del error adicional (como hacer retry, notificar, etc.)
-		return
+		return fmt.Errorf("error calculating total balance: %w", err) // Propaga el error
 	}
-
 	log.Printf("The total balance is: %.2f", total)
 
-	// Calcular el promedio de débitos
 	avgDebit, err := averageDebitAmount()
 	if err != nil {
-		log.Printf("Error calculating average debit amount: %v", err)
-		// Manejo adicional del error (como hacer retry, notificar, etc.)
-		return
+		return fmt.Errorf("error calculating average debit amount: %w", err)
 	}
 	log.Printf("The average debit amount is: %.2f", avgDebit)
 
-	// Calcular el promedio de créditos
 	avgCredit, err := averageCreditAmount()
 	if err != nil {
-		log.Printf("Error calculating average credit amount: %v", err)
-		// Manejo adicional del error (como hacer retry, notificar, etc.)
-		return
+		return fmt.Errorf("error calculating average credit amount: %w", err)
 	}
 	log.Printf("The average credit amount is: %.2f", avgCredit)
 
 	transactions, err := numberTransactionsInMonth()
 	if err != nil {
-		log.Printf("Error retrieving transactions by month: %v", err)
-		// Manejo del error adicional (como hacer retry, notificar, etc.)
-		return
+		return fmt.Errorf("error retrieving transactions by month: %w", err)
 	}
-	//log.Printf("array: %v \n", transactions)
-	/*
-		for _, transaction := range transactions {
-			log.Printf("Total transactions for %s: %d", transaction.Month, transaction.Total)
-		}
-	*/
 
 	var emailData models.EmailData
 	emailData.EmailTo = "hector.gonzalez.olmos@gmail.com"
@@ -75,8 +61,9 @@ func createSummary() {
 	emailData.AverageCreditAmount = avgCredit
 	emailData.Transactions = transactions
 
-	log.Printf("struct: %v \n", emailData)
+	log.Printf("Email data: %+v \n", emailData)
 
+	return nil
 }
 
 func totalBalance() (float64, error) {
