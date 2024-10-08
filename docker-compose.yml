@@ -17,6 +17,7 @@ services:
     restart: always
     command: 
       --default-authentication-plugin=mysql_native_password
+      --innodb-fast-shutdown=0
 
   api:
     container_name: docker_function
