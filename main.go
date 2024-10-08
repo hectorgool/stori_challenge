@@ -55,15 +55,18 @@ func createSummary() {
 	}
 	log.Printf("The average credit amount is: %.2f", avgCredit)
 
-	monthNumber := 7 // octubre
-	count, err := countTransactionsByMonth(monthNumber)
+	transactions, err := numberTransactionsInMonth()
 	if err != nil {
-		log.Printf("Error counting transactions for month %d: %v", monthNumber, err)
+		log.Printf("Error retrieving transactions by month: %v", err)
 		// Manejo del error adicional (como hacer retry, notificar, etc.)
 		return
 	}
-
-	log.Printf("The total number of transactions for month %d is: %d", monthNumber, count)
+	fmt.Printf("array: %v \n", transactions)
+	/*
+		for _, transaction := range transactions {
+			log.Printf("Total transactions for %s: %d", transaction.Month, transaction.Total)
+		}
+	*/
 
 }
 
@@ -97,6 +100,43 @@ func countTransactionsByMonth(monthNumber int) (int64, error) {
 		return 0, fmt.Errorf("failed to count transactions for month %d: %w", monthNumber, err)
 	}
 	return count, nil
+}
+
+func numberTransactionsInMonth() ([]models.TransactionsByMonth, error) {
+	transactions := []models.TransactionsByMonth{}
+
+	months := map[int]string{
+		1:  "January",
+		2:  "February",
+		3:  "March",
+		4:  "April",
+		5:  "May",
+		6:  "June",
+		7:  "July",
+		8:  "August",
+		9:  "September",
+		10: "October",
+		11: "November",
+		12: "December",
+	}
+
+	for monthNumber, monthName := range months {
+		count, err := countTransactionsByMonth(monthNumber)
+		if err != nil {
+			return nil, fmt.Errorf("error counting transactions for month %d: %w", monthNumber, err)
+		}
+
+		if count != 0 {
+			newTransaction := models.TransactionsByMonth{
+				Total: count,
+				Month: monthName,
+			}
+			// Append the new transaction to the array
+			transactions = append(transactions, newTransaction)
+		}
+	}
+
+	return transactions, nil
 }
 
 func processCSVFile(filePath string) error {
