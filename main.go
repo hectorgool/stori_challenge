@@ -79,13 +79,14 @@ func processCSVFile(filePath string) error {
 }
 
 func addTransactionToDB(sqlDoc models.SQLDocument) {
-	// Verifica si la transacción ya existe
-	if transactionExists(sqlDoc.IdTransaction) {
-		log.Println("Transacción ya existente. No se creará un nuevo registro.")
+	// Verifica si la transacción ya existe llamando a transactionExists
+	if err := transactionExists(sqlDoc.IdTransaction); err != nil {
+		// Si existe o hay un error, maneja la salida
+		log.Println("Error:", err)
 		return
 	}
 
-	// Si no existe, crea el nuevo registro
+	// Si no existe, procede a crear el nuevo registro
 	if err := config.GetDB().Create(&sqlDoc).Error; err != nil {
 		log.Fatalln("Error al crear la transacción:", err)
 	} else {
@@ -93,22 +94,21 @@ func addTransactionToDB(sqlDoc models.SQLDocument) {
 	}
 }
 
-func transactionExists(idTransaction uint) bool {
+func transactionExists(idTransaction uint) error {
 	var existingTransaction models.SQLDocument
 
 	// Busca si ya existe un registro con el IdTransaction
 	if err := config.GetDB().Where("id_transaction = ?", idTransaction).First(&existingTransaction).Error; err != nil {
 		if gorm.ErrRecordNotFound == err {
-			// Si no encuentra un registro, retorna falso
-			return false
+			// Si no se encuentra un registro, no hay error, retorna nil
+			return nil
 		}
-		// Si ocurre otro error, lo maneja y retorna verdadero para evitar insertar
-		log.Println("Error al buscar la transacción:", err)
-		return true
+		// Si ocurre otro error, lo retorna
+		return err
 	}
 
-	// Si encuentra un registro, retorna verdadero
-	return true
+	// Si encuentra un registro, retorna un error personalizado
+	return fmt.Errorf("la transacción con IdTransaction %d ya existe", idTransaction)
 }
 
 // Convertir un registro CSV a un registro SQL
