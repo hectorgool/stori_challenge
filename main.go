@@ -46,6 +46,15 @@ func createSummary() {
 	}
 	log.Printf("The average debit amount is: %.2f", avgDebit)
 
+	// Calcular el promedio de créditos
+	avgCredit, err := averageCreditAmount()
+	if err != nil {
+		log.Printf("Error calculating average credit amount: %v", err)
+		// Manejo adicional del error (como hacer retry, notificar, etc.)
+		return
+	}
+	log.Printf("The average credit amount is: %.2f", avgCredit)
+
 }
 
 func totalBalance() (float64, error) {
@@ -60,6 +69,14 @@ func averageDebitAmount() (float64, error) {
 	var avg float64
 	if err := config.GetDB().Model(&models.SQLDocument{}).Where("transaction < ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
 		return 0, fmt.Errorf("failed to get average debit transaction: %w", err)
+	}
+	return avg, nil
+}
+
+func averageCreditAmount() (float64, error) {
+	var avg float64
+	if err := config.GetDB().Model(&models.SQLDocument{}).Where("transaction > ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
+		return 0, fmt.Errorf("failed to get average credit transaction: %w", err)
 	}
 	return avg, nil
 }
