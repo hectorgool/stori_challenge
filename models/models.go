@@ -10,4 +10,8 @@ type (
 		Date          string  `gorm:"type:date"`
 		Transaction   float64 `json:"transaction"`
 	}
+	TransactionsByMonth struct {
+		Total int64
+		Month string
+	}
 )
