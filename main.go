@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/csv"
 	"fmt"
+	"log"
 	"os"
+	"stori_challenge/config"
 	"stori_challenge/models"
 	"strconv"
 	"strings"
@@ -67,10 +69,17 @@ func processCSVFile(filePath string) error {
 			fmt.Println("Error converting CSV to SQL:", err)
 		}
 		fmt.Println(sqlDoc)
+		addTransactionToDB(sqlDoc)
 
 	}
 
 	return nil
+}
+
+func addTransactionToDB(sqlDoc models.SQLDocument) {
+	if err := config.GetDB().Create(&sqlDoc).Error; err != nil {
+		log.Fatalln("Create row fail!")
+	}
 }
 
 // Convertir un registro CSV a un registro SQL
