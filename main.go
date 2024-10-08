@@ -20,7 +20,13 @@ func main() {
 	err := processCSVFile(filePath)
 	if err != nil {
 		fmt.Println("Error:", err)
+	} else {
+		createSummary()
 	}
+}
+
+func createSummary() {
+	fmt.Println("Summary:")
 }
 
 func processCSVFile(filePath string) error {
