@@ -15,16 +15,17 @@ import (
 )
 
 func main() {
+	const filePath = "txns.csv" // Usar constante para la ruta del archivo
 
-	filePath := "txns.csv"
-	err := processCSVFile(filePath)
-	if err != nil {
-		fmt.Println("Error:", err)
-	} else {
-		if err := createSummary(); err != nil {
-			log.Fatalf("Failed to create summary: %v", err)
-		}
+	if err := processCSVFile(filePath); err != nil {
+		log.Fatalf("Error processing CSV file (%s): %v", filePath, err)
 	}
+
+	if err := createSummary(); err != nil {
+		log.Fatalf("Failed to create summary: %v", err)
+	}
+
+	fmt.Println("CSV file processed and summary created successfully.")
 }
 
 // createSummary genera un resumen de los datos financieros y maneja errores de manera más robusta.
