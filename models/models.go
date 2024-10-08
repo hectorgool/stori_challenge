@@ -14,4 +14,11 @@ type (
 		Total int64
 		Month string
 	}
+	EmailData struct {
+		EmailTo             string
+		TotalBalance        float64
+		AverageDebitAmount  float64
+		AverageCreditAmount float64
+		Transactions        []TransactionsByMonth
+	}
 )
