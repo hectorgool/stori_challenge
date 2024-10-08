@@ -27,6 +27,23 @@ func main() {
 
 func createSummary() {
 	fmt.Println("Summary:")
+
+	total, err := totalBalance()
+	if err != nil {
+		log.Printf("Error calculating total balance: %v", err)
+		// Manejo del error adicional (como hacer retry, notificar, etc.)
+		return
+	}
+
+	log.Printf("The total balance is: %.2f", total)
+}
+
+func totalBalance() (float64, error) {
+	var total float64
+	if err := config.GetDB().Model(&models.SQLDocument{}).Select("SUM(transaction)").Scan(&total).Error; err != nil {
+		return 0, fmt.Errorf("failed to get total transaction: %w", err)
+	}
+	return total, nil
 }
 
 func processCSVFile(filePath string) error {
