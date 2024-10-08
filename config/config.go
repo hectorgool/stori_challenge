@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"stori_challenge/models"
 	"sync"
 	"time"
 
@@ -37,6 +38,12 @@ func GetDB() *gorm.DB {
 			log.Fatalf("Error al conectar a la base de datos: %v", err)
 		}
 
+		// Auto migrar el esquema
+		err = db.AutoMigrate(&models.SQLDocument{})
+		if err != nil {
+			log.Fatalf("Error al migrar el esquema: %v", err)
+		}
+
 		// Configura el pool de conexiones
 		sqlDB, err := db.DB()
 		if err != nil {
@@ -47,7 +54,7 @@ func GetDB() *gorm.DB {
 		sqlDB.SetMaxOpenConns(100)              // Conexiones máximas abiertas
 		sqlDB.SetConnMaxLifetime(time.Hour * 1) // Duración máxima de las conexiones
 
-		fmt.Println("Conexión a la base de datos establecida")
+		//fmt.Println("Conexión a la base de datos establecida")
 	})
 
 	return db
