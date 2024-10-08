@@ -36,3 +36,5 @@ vendor/
 # PDF and TXT files
 *.pdf
 *.txt
+
+tmp/
