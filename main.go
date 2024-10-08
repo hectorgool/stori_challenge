@@ -55,6 +55,16 @@ func createSummary() {
 	}
 	log.Printf("The average credit amount is: %.2f", avgCredit)
 
+	monthNumber := 7 // octubre
+	count, err := countTransactionsByMonth(monthNumber)
+	if err != nil {
+		log.Printf("Error counting transactions for month %d: %v", monthNumber, err)
+		// Manejo del error adicional (como hacer retry, notificar, etc.)
+		return
+	}
+
+	log.Printf("The total number of transactions for month %d is: %d", monthNumber, count)
+
 }
 
 func totalBalance() (float64, error) {
@@ -79,6 +89,14 @@ func averageCreditAmount() (float64, error) {
 		return 0, fmt.Errorf("failed to get average credit transaction: %w", err)
 	}
 	return avg, nil
+}
+
+func countTransactionsByMonth(monthNumber int) (int64, error) {
+	var count int64
+	if err := config.GetDB().Model(&models.SQLDocument{}).Where("MONTH(date) = ?", monthNumber).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count transactions for month %d: %w", monthNumber, err)
+	}
+	return count, nil
 }
 
 func processCSVFile(filePath string) error {
