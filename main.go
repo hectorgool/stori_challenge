@@ -61,12 +61,21 @@ func createSummary() {
 		// Manejo del error adicional (como hacer retry, notificar, etc.)
 		return
 	}
-	fmt.Printf("array: %v \n", transactions)
+	//log.Printf("array: %v \n", transactions)
 	/*
 		for _, transaction := range transactions {
 			log.Printf("Total transactions for %s: %d", transaction.Month, transaction.Total)
 		}
 	*/
+
+	var emailData models.EmailData
+	emailData.EmailTo = "hector.gonzalez.olmos@gmail.com"
+	emailData.TotalBalance = total
+	emailData.AverageDebitAmount = avgDebit
+	emailData.AverageCreditAmount = avgCredit
+	emailData.Transactions = transactions
+
+	log.Printf("struct: %v \n", emailData)
 
 }
 
