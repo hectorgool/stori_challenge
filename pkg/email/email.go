@@ -7,6 +7,7 @@ import (
 	"net/smtp"
 	"os"
 	"path/filepath"
+	"regexp"
 	"stori_challenge/pkg/models"
 	"strings"
 	"text/template"
@@ -79,4 +80,10 @@ func SendEmail(data models.EmailData) error {
 	log.Printf("Email enviado con éxito a: %s", strings.Join(recipients, ", "))
 
 	return nil
+}
+
+func IsValidEmail(email string) bool {
+	// Expresión regular para validar el formato del correo
+	re := regexp.MustCompile(`^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$`)
+	return re.MatchString(email)
 }
