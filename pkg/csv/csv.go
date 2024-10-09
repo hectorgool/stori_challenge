@@ -158,3 +158,34 @@ func stringToFloat64(s string) (float64, error) {
 func getCurrentYear() int {
 	return time.Now().Year()
 }
+
+// Verifica si el tamaño del archivo es menor al límite especificado en megabytes
+func CheckFileSize(filePath string) error {
+	// Obtener información del archivo
+	fileInfo, err := os.Stat(filePath)
+	if err != nil {
+		return fmt.Errorf("no se pudo obtener información del archivo: %v", err)
+	}
+
+	// Obtener el tamaño del archivo en bytes
+	fileSize := fileInfo.Size()
+
+	// Obtener el límite de tamaño de archivo desde la variable de entorno (en MB)
+	limitStr := os.Getenv("FILE_SIZE_LIMIT")
+	if limitStr == "" {
+		limitStr = "1" // 1 MB por defecto
+	}
+
+	// Convertir el límite de megabytes a bytes
+	limitMB, err := strconv.ParseFloat(limitStr, 64)
+	if err != nil {
+		return fmt.Errorf("error al convertir el límite de tamaño de archivo: %v", err)
+	}
+	limitBytes := int64(limitMB * 1024 * 1024) // Conversión de MB a bytes
+
+	// Verificar si el tamaño del archivo es menor al límite
+	if fileSize > limitBytes {
+		return fmt.Errorf("el tamaño del archivo %s (%d bytes) excede el límite de %d bytes (%f MB)", filePath, fileSize, limitBytes, limitMB)
+	}
+	return nil
+}
