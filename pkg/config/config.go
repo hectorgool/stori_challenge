@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/joho/godotenv"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -47,6 +48,11 @@ func GetDB() *gorm.DB {
 }
 
 func connectDB() (*gorm.DB, error) {
+
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("Error al cargar el archivo .env: %v", err)
+	}
 	dbParams := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=%v&parseTime=%v&loc=%v",
 		os.Getenv("MYSQL_USER"),
 		os.Getenv("MYSQL_PASSWORD"),
