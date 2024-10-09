@@ -3,6 +3,7 @@ package email
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"net/smtp"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 )
 
 func SendEmail(data models.EmailData) error {
+
 	// Configuración del servidor SMTP
 	smtpServer := os.Getenv("SMTP_SERVER")
 	smtpPort := os.Getenv("SMTP_PORT")
@@ -72,6 +74,9 @@ func SendEmail(data models.EmailData) error {
 	if err = smtp.SendMail(smtpServer+":"+smtpPort, auth, senderEmail, recipients, body); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)
 	}
+
+	// Log del correo enviado
+	log.Printf("Email enviado con éxito a: %s", strings.Join(recipients, ", "))
 
 	return nil
 }
