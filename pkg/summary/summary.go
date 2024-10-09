@@ -34,7 +34,7 @@ func CreateSummary() (models.EmailData, error) {
 	}
 
 	var emailData models.EmailData
-	emailData.EmailTo = "hector.gonzalez.olmos@gmail.com"
+	//emailData.EmailTo = "hector.gonzalez.olmos@gmail.com"
 	emailData.TotalBalance = total
 	emailData.AverageDebitAmount = avgDebit
 	emailData.AverageCreditAmount = avgCredit
