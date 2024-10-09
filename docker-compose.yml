@@ -5,7 +5,7 @@ services:
     container_name: docker_mysql
     build:
       context: .
-      dockerfile: db.Dockerfile
+      dockerfile: internal/db.Dockerfile
     ports:
       - "${MYSQL_PORT}:${MYSQL_PORT_DOCKER}"
     env_file:
@@ -18,16 +18,21 @@ services:
     command: 
       --default-authentication-plugin=mysql_native_password
       --innodb-fast-shutdown=0
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
 
   api:
     container_name: docker_function
     build:
       context: .
-      dockerfile: api.Dockerfile
+      dockerfile: internal/api.Dockerfile
     env_file:
       - .env
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     volumes:
       - .:/app/
     networks:
