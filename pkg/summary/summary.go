@@ -7,43 +7,55 @@ import (
 	"stori_challenge/pkg/models"
 )
 
-// createSummary genera un resumen de los datos financieros y maneja errores de manera más robusta.
-func CreateSummary() (models.EmailData, error) {
+// SummaryProvider defines the methods required for generating a summary.
+type (
+	SummaryProvider interface {
+		TotalBalance() (float64, error)
+		AverageDebitAmount() (float64, error)
+		AverageCreditAmount() (float64, error)
+		NumberTransactionsInMonth() ([]models.TransactionsByMonth, error)
+	}
 
-	total, err := totalBalance()
+	FinanceService struct{}
+)
+
+// CreateSummary generates a financial summary based on the provided data.
+func CreateSummary(provider SummaryProvider) (models.EmailData, error) {
+
+	total, err := provider.TotalBalance()
 	if err != nil {
-		return models.EmailData{}, fmt.Errorf("error calculating total balance: %w", err) // Propaga el error
+		return models.EmailData{}, fmt.Errorf("error calculating total balance: %w", err)
 	}
 	log.Printf("The total balance is: %.2f", total)
 
-	avgDebit, err := averageDebitAmount()
+	avgDebit, err := provider.AverageDebitAmount()
 	if err != nil {
 		return models.EmailData{}, fmt.Errorf("error calculating average debit amount: %w", err)
 	}
 	log.Printf("The average debit amount is: %.2f", avgDebit)
 
-	avgCredit, err := averageCreditAmount()
+	avgCredit, err := provider.AverageCreditAmount()
 	if err != nil {
 		return models.EmailData{}, fmt.Errorf("error calculating average credit amount: %w", err)
 	}
 	log.Printf("The average credit amount is: %.2f", avgCredit)
 
-	transactions, err := numberTransactionsInMonth()
+	transactions, err := provider.NumberTransactionsInMonth()
 	if err != nil {
-		return models.EmailData{}, fmt.Errorf("error retrieving transactions by month: %w", err)
+		return models.EmailData{}, fmt.Errorf("error retrieving number of transactions in month: %w", err)
 	}
+	log.Printf("The transactions in the month are: %v", transactions)
 
-	var emailData models.EmailData
-	//emailData.EmailTo = "hector.gonzalez.olmos@gmail.com"
-	emailData.TotalBalance = total
-	emailData.AverageDebitAmount = avgDebit
-	emailData.AverageCreditAmount = avgCredit
-	emailData.Transactions = transactions
-
-	return emailData, nil // Regresa emailData y nil en caso de éxito
+	return models.EmailData{
+		TotalBalance:        total,
+		AverageDebitAmount:  avgDebit,
+		AverageCreditAmount: avgCredit,
+		Transactions:        transactions,
+	}, nil
 }
 
-func totalBalance() (float64, error) {
+// func totalBalance() (float64, error) {
+func (f *FinanceService) TotalBalance() (float64, error) {
 	var total float64
 	if err := config.GetDB().Model(&models.SQLDocument{}).Select("SUM(transaction)").Scan(&total).Error; err != nil {
 		return 0, fmt.Errorf("failed to get total transaction: %w", err)
@@ -51,7 +63,8 @@ func totalBalance() (float64, error) {
 	return total, nil
 }
 
-func averageDebitAmount() (float64, error) {
+// func averageDebitAmount() (float64, error) {
+func (f *FinanceService) AverageDebitAmount() (float64, error) {
 	var avg float64
 	if err := config.GetDB().Model(&models.SQLDocument{}).Where("transaction < ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
 		return 0, fmt.Errorf("failed to get average debit transaction: %w", err)
@@ -59,7 +72,8 @@ func averageDebitAmount() (float64, error) {
 	return avg, nil
 }
 
-func averageCreditAmount() (float64, error) {
+// func averageCreditAmount() (float64, error) {
+func (f *FinanceService) AverageCreditAmount() (float64, error) {
 	var avg float64
 	if err := config.GetDB().Model(&models.SQLDocument{}).Where("transaction > ?", 0).Select("AVG(transaction)").Scan(&avg).Error; err != nil {
 		return 0, fmt.Errorf("failed to get average credit transaction: %w", err)
@@ -67,15 +81,7 @@ func averageCreditAmount() (float64, error) {
 	return avg, nil
 }
 
-func countTransactionsByMonth(monthNumber int) (int64, error) {
-	var count int64
-	if err := config.GetDB().Model(&models.SQLDocument{}).Where("MONTH(date) = ?", monthNumber).Count(&count).Error; err != nil {
-		return 0, fmt.Errorf("failed to count transactions for month %d: %w", monthNumber, err)
-	}
-	return count, nil
-}
-
-func numberTransactionsInMonth() ([]models.TransactionsByMonth, error) {
+func (f *FinanceService) NumberTransactionsInMonth() ([]models.TransactionsByMonth, error) {
 	transactions := []models.TransactionsByMonth{}
 
 	months := map[int]string{
@@ -110,4 +116,12 @@ func numberTransactionsInMonth() ([]models.TransactionsByMonth, error) {
 	}
 
 	return transactions, nil
+}
+
+func countTransactionsByMonth(monthNumber int) (int64, error) {
+	var count int64
+	if err := config.GetDB().Model(&models.SQLDocument{}).Where("MONTH(date) = ?", monthNumber).Count(&count).Error; err != nil {
+		return 0, fmt.Errorf("failed to count transactions for month %d: %w", monthNumber, err)
+	}
+	return count, nil
 }
