@@ -18,7 +18,7 @@ import (
 func SendEmail(data models.EmailData) error {
 
 	// Ruta al archivo .env en la raíz del proyecto
-	envPath := filepath.Join("../", "../", ".env")
+	envPath := filepath.Join(".", ".env")
 
 	// Cargar el archivo .env
 	err := godotenv.Load(envPath)
@@ -42,7 +42,7 @@ func SendEmail(data models.EmailData) error {
 
 	// Plantilla HTML externa
 	//templateFile := "email_template.html"
-	templateFile := filepath.Join("../", "../", "web", "template", "email_template.html")
+	templateFile := filepath.Join("web", "template", "email_template.html")
 
 	// Parseamos la plantilla HTML
 	t, err := template.ParseFiles(templateFile)
