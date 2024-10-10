@@ -11,9 +11,20 @@ import (
 	"stori_challenge/pkg/models"
 	"strings"
 	"text/template"
+
+	"github.com/joho/godotenv"
 )
 
 func SendEmail(data models.EmailData) error {
+
+	// Ruta al archivo .env en la raíz del proyecto
+	envPath := filepath.Join("../", "../", ".env")
+
+	// Cargar el archivo .env
+	err := godotenv.Load(envPath)
+	if err != nil {
+		log.Fatalf("Error al cargar el archivo: %v", err)
+	}
 
 	// Configuración del servidor SMTP
 	smtpServer := os.Getenv("SMTP_SERVER")
@@ -31,7 +42,7 @@ func SendEmail(data models.EmailData) error {
 
 	// Plantilla HTML externa
 	//templateFile := "email_template.html"
-	templateFile := filepath.Join("web", "template", "email_template.html")
+	templateFile := filepath.Join("../", "../", "web", "template", "email_template.html")
 
 	// Parseamos la plantilla HTML
 	t, err := template.ParseFiles(templateFile)
