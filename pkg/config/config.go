@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"stori_challenge/pkg/models"
 	"sync"
 	"time"
@@ -49,10 +50,15 @@ func GetDB() *gorm.DB {
 
 func connectDB() (*gorm.DB, error) {
 
-	err := godotenv.Load()
+	// Ruta al archivo .env en la raíz del proyecto
+	envPath := filepath.Join("../", "../", ".env")
+
+	// Cargar el archivo .env
+	err := godotenv.Load(envPath)
 	if err != nil {
-		log.Fatalf("Error al cargar el archivo .env: %v", err)
+		log.Fatalf("Error al cargar el archivo: %v", err)
 	}
+
 	dbParams := fmt.Sprintf("%v:%v@tcp(%v:%v)/%v?charset=%v&parseTime=%v&loc=%v",
 		os.Getenv("MYSQL_USER"),
 		os.Getenv("MYSQL_PASSWORD"),
