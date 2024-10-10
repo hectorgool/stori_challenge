@@ -51,7 +51,7 @@ func GetDB() *gorm.DB {
 func connectDB() (*gorm.DB, error) {
 
 	// Ruta al archivo .env en la raíz del proyecto
-	envPath := filepath.Join("../", "../", ".env")
+	envPath := filepath.Join(".", ".env")
 
 	// Cargar el archivo .env
 	err := godotenv.Load(envPath)
@@ -68,7 +68,6 @@ func connectDB() (*gorm.DB, error) {
 		os.Getenv("MYSQL_CHARSET"),
 		os.Getenv("MYSQL_PARSETIME"),
 		os.Getenv("MYSQL_LOC"))
-
 	db, err := gorm.Open(mysql.Open(dbParams), &gorm.Config{
 		PrepareStmt: true, // Reuse prepared statements
 	})
