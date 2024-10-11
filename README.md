@@ -3,7 +3,18 @@
 
 ## Description
 
-This API generates a summary email containing the following information:
+This API is built using Docker and utilizes a MySQL database. To function correctly, your computer must have the following ports available:
+
+- **Port 3306** for the MySQL database
+- **Port 8081** for the API application
+
+The API offers two endpoints:
+
+1. **Test Endpoint** (`/`): This endpoint is used for testing purposes and simply returns the message: *"Hello, Stori."*
+   
+2. **Email Summary Endpoint** (`/csv`): This endpoint receives the email address of the recipient who will receive the summary information and the `.csv` file containing the records to be processed. By default, the system is capable of processing files smaller than 1 MB.
+
+The summary email contains the following information:
 
 1. Total balance: 39.74
 2. Number of transactions in July: 2
@@ -117,4 +128,3 @@ SMTP_PASSWD=""
 ### Support
 
 For any issues or inquiries, please contact Héctor at [hectorgool@gmail.com](mailto:hectorgool@gmail.com).
-
