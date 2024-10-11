@@ -2,46 +2,47 @@ version: '3.3'
 
 services:
   db:
-    container_name: docker_mysql
+    container_name: docker_mysql # Name of the MySQL container
     build:
-      context: .
-      dockerfile: internal/db.Dockerfile
+      context: . # Build context for the MySQL service
+      dockerfile: internal/db.Dockerfile # Dockerfile location for the MySQL image
     ports:
-      - "${MYSQL_PORT}:${MYSQL_PORT_DOCKER}"
+      - "${MYSQL_PORT}:${MYSQL_PORT_DOCKER}" # Map host MySQL port to container port
     env_file:
-      - .env
+      - .env # Load environment variables from the .env file
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_data:/var/lib/mysql # Persist MySQL data in a named volume
     networks:
-      - default
-    restart: always
+      - default # Use the default network
+    restart: always # Restart the container if it stops
     command: 
-      --default-authentication-plugin=mysql_native_password
-      --innodb-fast-shutdown=0
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 20s
-      retries: 10
+      # Use native password authentication and Disable fast shutdown for InnoDB
+      --default-authentication-plugin=mysql_native_password 
+      --innodb-fast-shutdown=0 
+    healthcheck: # Health check configuration for the MySQL service
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"] # Command to check if MySQL is running
+      timeout: 20s # Timeout for the health check
+      retries: 10 # Number of retries before considering the service unhealthy
 
   api:
-    container_name: docker_function
+    container_name: docker_function # Name of the API container
     build:
-      context: .
-      dockerfile: internal/api.Dockerfile
+      context: . # Build context for the API service
+      dockerfile: internal/api.Dockerfile # Dockerfile location for the API image
     ports:
-      - "${HOST_PORT}:${HOST_PORT_DOCKER}"
+      - "${HOST_PORT}:${HOST_PORT_DOCKER}" # Map host API port to container port
     env_file:
-      - .env
+      - .env # Load environment variables from the .env file
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_healthy # Ensure the database service is healthy before starting the API
     volumes:
-      - .:/app/
+      - .:/app/ # Mount current directory to /app in the container
     networks:
-      - default
+      - default # Use the default network
 
 networks:
-  default:
+  default: # Default network configuration
 
 volumes:
-  mysql_data:
+  mysql_data: # Named volume for MySQL data persistence

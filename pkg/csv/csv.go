@@ -14,97 +14,110 @@ import (
 	"gorm.io/gorm"
 )
 
+// ProcessCSVFile processes the given CSV file and stores the data in the database.
 func ProcessCSVFile(filePath string) error {
-	// Abrir el archivo CSV
 	file, err := os.Open(filePath)
 	if err != nil {
 		return fmt.Errorf("error al abrir el archivo: %v", err)
 	}
 	defer file.Close()
 
-	// Leer el archivo CSV
 	reader := csv.NewReader(file)
 	reader.TrimLeadingSpace = true
 
-	// Leer la cabecera
+	if err := validateCSVHeader(reader); err != nil {
+		return err
+	}
+
+	rows, err := reader.ReadAll()
+	if err != nil {
+		return fmt.Errorf("error al leer las filas: %v", err)
+	}
+
+	return processCSVRows(rows)
+}
+
+// validateCSVHeader validates the header of the CSV file.
+func validateCSVHeader(reader *csv.Reader) error {
 	headers, err := reader.Read()
 	if err != nil {
 		return fmt.Errorf("error al leer la cabecera: %v", err)
 	}
 
-	// Verificar si la cabecera es correcta
 	expectedHeaders := []string{"Id", "Date", "Transaction"}
 	for i, header := range expectedHeaders {
 		if strings.TrimSpace(headers[i]) != header {
 			return fmt.Errorf("cabecera inválida: se esperaba %s, pero se encontró %s", header, headers[i])
 		}
 	}
+	return nil
+}
 
-	// Leer todas las filas
-	rows, err := reader.ReadAll()
-	if err != nil {
-		return fmt.Errorf("error al leer las filas: %v", err)
-	}
-
-	var csvRow models.CSVDocument
+// processCSVRows processes each row in the CSV and stores them in the database.
+func processCSVRows(rows [][]string) error {
 	for idx, row := range rows {
-		// Verificar que el archivo, tenga exactamente 3 columnas
-		if len(row) != 3 {
-			return fmt.Errorf("la fila %d no tiene exactamente 3 columnas: %v", idx+2, row) // +2 porque la primera fila es la cabecera
+		if err := validateCSVRow(row, idx); err != nil {
+			return err
 		}
-		csvRow.Id = row[0]
-		csvRow.Date = row[1]
-		csvRow.Transaction = row[2]
+
+		csvRow := models.CSVDocument{
+			Id:          row[0],
+			Date:        row[1],
+			Transaction: row[2],
+		}
 
 		sqlDoc, err := dataCSVToSQL(csvRow)
 		if err != nil {
-			// Si ocurre un error, se imprime y se termina la ejecución
-			fmt.Println("Error converting CSV to SQL:", err)
+			log.Println("Error converting CSV to SQL:", err)
+			continue
 		}
-		fmt.Println(sqlDoc)
-		addTransactionToDB(sqlDoc)
 
+		if err := addTransactionToDB(sqlDoc); err != nil {
+			log.Println("Error adding transaction to DB:", err)
+		}
 	}
 
 	return nil
 }
 
-func addTransactionToDB(sqlDoc models.SQLDocument) {
-	// Verifica si la transacción ya existe llamando a transactionExists
-	if err := transactionExists(sqlDoc.IdTransaction); err != nil {
-		// Si existe o hay un error, maneja la salida
-		log.Println("Error:", err)
-		return
+// validateCSVRow validates the individual row of the CSV.
+func validateCSVRow(row []string, rowIndex int) error {
+	if len(row) != 3 {
+		return fmt.Errorf("la fila %d no tiene exactamente 3 columnas: %v", rowIndex+2, row)
 	}
-
-	// Si no existe, procede a crear el nuevo registro
-	if err := config.GetDB().Create(&sqlDoc).Error; err != nil {
-		log.Fatalln("Error al crear la transacción:", err)
-	} else {
-		log.Println("Transacción creada exitosamente.")
-	}
+	return nil
 }
 
-func transactionExists(idTransaction uint) error {
-	var existingTransaction models.SQLDocument
-
-	// Busca si ya existe un registro con el IdTransaction
-	if err := config.GetDB().Where("id_transaction = ?", idTransaction).First(&existingTransaction).Error; err != nil {
-		if gorm.ErrRecordNotFound == err {
-			// Si no se encuentra un registro, no hay error, retorna nil
-			return nil
-		}
-		// Si ocurre otro error, lo retorna
+// addTransactionToDB adds a SQLDocument to the database if it doesn't already exist.
+func addTransactionToDB(sqlDoc models.SQLDocument) error {
+	if err := transactionExists(sqlDoc.IdTransaction); err != nil {
+		log.Println("Error:", err)
 		return err
 	}
 
-	// Si encuentra un registro, retorna un error personalizado
+	if err := config.GetDB().Create(&sqlDoc).Error; err != nil {
+		return fmt.Errorf("error al crear la transacción: %v", err)
+	}
+	log.Println("Transacción creada exitosamente.")
+	return nil
+}
+
+// transactionExists checks if a transaction already exists in the database.
+func transactionExists(idTransaction uint) error {
+	var existingTransaction models.SQLDocument
+
+	if err := config.GetDB().Where("id_transaction = ?", idTransaction).First(&existingTransaction).Error; err != nil {
+		if gorm.ErrRecordNotFound == err {
+			return nil // No existe, retorna nil
+		}
+		return err
+	}
+
 	return fmt.Errorf("la transacción con IdTransaction %d ya existe", idTransaction)
 }
 
-// Convertir un registro CSV a un registro SQL
+// dataCSVToSQL converts a CSVDocument to a SQLDocument.
 func dataCSVToSQL(csvRow models.CSVDocument) (models.SQLDocument, error) {
-	// Validación y procesamiento del campo Date
 	dateParts := strings.Split(csvRow.Date, "/")
 	if len(dateParts) != 2 {
 		return models.SQLDocument{}, fmt.Errorf("invalid date format for row: %v", csvRow)
@@ -112,31 +125,27 @@ func dataCSVToSQL(csvRow models.CSVDocument) (models.SQLDocument, error) {
 
 	month, day := dateParts[0], dateParts[1]
 
-	// Conversión de string a uint para el campo Id
 	IdValue, err := stringToUint(csvRow.Id)
 	if err != nil {
 		return models.SQLDocument{}, fmt.Errorf("error converting Id: %v", err)
 	}
 
-	// Conversión de string a float64 para el campo Transaction
 	TransactionFloat64, err := stringToFloat64(csvRow.Transaction)
 	if err != nil {
 		return models.SQLDocument{}, fmt.Errorf("error converting Transaction: %v", err)
 	}
 
 	year := getCurrentYear()
-	// Creación del documento SQL con los datos procesados
 	sqlDoc := models.SQLDocument{
 		IdTransaction: IdValue,
-		Date:          fmt.Sprintf("%v-%v-%v", year, month, day), // Fecha en formato YYYY-MM-DD
+		Date:          fmt.Sprintf("%v-%v-%v", year, month, day),
 		Transaction:   TransactionFloat64,
 	}
 
 	return sqlDoc, nil
 }
 
-// Convertir el Id string a uint
-// Recibe un string, lo convierte a un número sin signo (uint) y maneja errores
+// stringToUint converts a string to uint.
 func stringToUint(s string) (uint, error) {
 	num, err := strconv.ParseUint(s, 10, 0)
 	if err != nil {
@@ -145,8 +154,7 @@ func stringToUint(s string) (uint, error) {
 	return uint(num), nil
 }
 
-// Convertir Transaction string a float64
-// Recibe un string, lo convierte a float64 y maneja errores
+// stringToFloat64 converts a string to float64.
 func stringToFloat64(s string) (float64, error) {
 	floatValue, err := strconv.ParseFloat(s, 64)
 	if err != nil {
@@ -155,37 +163,40 @@ func stringToFloat64(s string) (float64, error) {
 	return floatValue, nil
 }
 
+// getCurrentYear returns the current year.
 func getCurrentYear() int {
 	return time.Now().Year()
 }
 
-// Verifica si el tamaño del archivo es menor al límite especificado en megabytes
+// CheckFileSize verifies if the file size is less than the specified limit in megabytes.
 func CheckFileSize(filePath string) error {
-	// Obtener información del archivo
 	fileInfo, err := os.Stat(filePath)
 	if err != nil {
 		return fmt.Errorf("no se pudo obtener información del archivo: %v", err)
 	}
 
-	// Obtener el tamaño del archivo en bytes
 	fileSize := fileInfo.Size()
+	limitBytes, err := getFileSizeLimit()
+	if err != nil {
+		return err
+	}
 
-	// Obtener el límite de tamaño de archivo desde la variable de entorno (en MB)
+	if fileSize > limitBytes {
+		return fmt.Errorf("el tamaño del archivo %s (%d bytes) excede el límite de %d bytes", filePath, fileSize, limitBytes)
+	}
+	return nil
+}
+
+// getFileSizeLimit retrieves the file size limit from environment variable.
+func getFileSizeLimit() (int64, error) {
 	limitStr := os.Getenv("FILE_SIZE_LIMIT")
 	if limitStr == "" {
 		limitStr = "1" // 1 MB por defecto
 	}
 
-	// Convertir el límite de megabytes a bytes
 	limitMB, err := strconv.ParseFloat(limitStr, 64)
 	if err != nil {
-		return fmt.Errorf("error al convertir el límite de tamaño de archivo: %v", err)
+		return 0, fmt.Errorf("error al convertir el límite de tamaño de archivo: %v", err)
 	}
-	limitBytes := int64(limitMB * 1024 * 1024) // Conversión de MB a bytes
-
-	// Verificar si el tamaño del archivo es menor al límite
-	if fileSize > limitBytes {
-		return fmt.Errorf("el tamaño del archivo %s (%d bytes) excede el límite de %d bytes (%f MB)", filePath, fileSize, limitBytes, limitMB)
-	}
-	return nil
+	return int64(limitMB * 1024 * 1024), nil // Conversión de MB a bytes
 }

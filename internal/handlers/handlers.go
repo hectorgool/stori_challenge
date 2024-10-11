@@ -11,65 +11,67 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// HandleCSVUpload handles the CSV file upload and summary creation.
 func HandleCSVUpload(c *gin.Context) {
-	// Obtener el email del formulario
+	// Retrieve the email address from the form data
 	emailWithSummary := c.PostForm("email")
 
-	// Validar el formato del correo electrónico
+	// Validate the format of the email address
 	if !email.IsValidEmail(emailWithSummary) {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Formato de correo electrónico inválido"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email format"})
 		return
 	}
 
-	// Obtener el archivo CSV
+	// Retrieve the uploaded CSV file from the form
 	file, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No se pudo obtener el archivo"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Could not retrieve the file"})
 		return
 	}
 
-	// Crear un archivo temporal para guardar el CSV
+	// Create a temporary file to store the uploaded CSV
 	tempFile, err := os.CreateTemp("", "csv-*.csv")
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo crear un archivo temporal"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not create temporary file"})
 		return
 	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
+	defer os.Remove(tempFile.Name()) // Ensure the temporary file is removed after use
+	defer tempFile.Close()           // Close the temporary file when done
 
-	// Guardar el archivo subido en el archivo temporal
+	// Save the uploaded file to the temporary location
 	if err := c.SaveUploadedFile(file, tempFile.Name()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "No se pudo guardar el archivo"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not save the file"})
 		return
 	}
 
-	// Verificar el tamaño del archivo
+	// Check the size of the uploaded file
 	if err := csv.CheckFileSize(tempFile.Name()); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "El archivo excede el límite de tamaño permitido"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "File exceeds the allowed size limit"})
 		return
 	}
 
-	// Procesar el archivo CSV
+	// Process the uploaded CSV file
 	if err := csv.ProcessCSVFile(tempFile.Name()); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al procesar el archivo CSV"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error processing the CSV file"})
 		return
 	}
 
-	// Crear el resumen
+	// Create the summary from the processed data
 	provider := &summary.FinanceService{}
 	emailData, err := summary.CreateSummary(provider)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al crear el resumen"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error creating the summary"})
 		return
 	}
-	emailData.EmailTo = emailWithSummary
+	emailData.EmailTo = emailWithSummary // Set the recipient email address
 
-	// Enviar el email
+	// Send the summary email
 	if err := email.SendEmail(emailData); err != nil {
-		log.Printf("Error al enviar correo: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al enviar el correo"})
+		log.Printf("Error sending email: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error sending the email"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Archivo CSV procesado y resumen enviado exitosamente"})
+	// Respond with a success message
+	c.JSON(http.StatusOK, gin.H{"message": "CSV file processed and summary sent successfully"})
 }

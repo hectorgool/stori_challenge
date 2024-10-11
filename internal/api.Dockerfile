@@ -1,19 +1,19 @@
 FROM golang:1.23-alpine
 
-# Establecer el directorio de trabajo
+# Set the working directory inside the container
 WORKDIR /app
 
-# Copiar go.mod y go.sum para instalar dependencias
+# Copy go.mod and go.sum files to the working directory for dependency installation
 COPY go.mod go.sum ./
 
-# Instalar Air para hot reload
+# Install Air for hot reloading during development
 RUN go install github.com/air-verse/air@latest
 
-# Copiar el subdirectorio que contiene el archivo main.go
+# Copy the subdirectory containing the main.go file to the container
 COPY cmd/app/ ./cmd/app/
 
-# Instalar dependencias
+# Install the project's dependencies
 RUN go mod tidy
 
-# Ejecutar la aplicación usando Air sin .air.toml
+# Command to run the application using Air, specifying build command and output binary location
 CMD ["air", "--build.cmd", "go build -o /app/tmp/main ./cmd/app", "--build.bin", "/app/tmp/main"]
