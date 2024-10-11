@@ -3,7 +3,7 @@
 
 ## Description
 
-This API is built using Docker and utilizes a MySQL database. To function correctly, your computer must have the following ports available:
+This API is built using Docker and utilizes a MySQL database. It operates locally, and an internet connection is required to download the Go libraries and Docker images. To function correctly, your computer must have the following ports available:
 
 - **Port 3306** for the MySQL database
 - **Port 8081** for the API application
@@ -128,3 +128,4 @@ SMTP_PASSWD=""
 ### Support
 
 For any issues or inquiries, please contact Héctor at [hectorgool@gmail.com](mailto:hectorgool@gmail.com).
+
